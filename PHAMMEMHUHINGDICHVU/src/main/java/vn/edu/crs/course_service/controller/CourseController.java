@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
 @RestController
 @RequestMapping("/courses")
 @RequiredArgsConstructor
@@ -22,6 +21,7 @@ public class CourseController {
             Pageable pageable) {
         return courseService.search(keyword, pageable);
     }
+
     @GetMapping("/{id}")
     public CourseDTO getById(@PathVariable Long id) {
         return courseService.getById(id);
@@ -42,5 +42,4 @@ public class CourseController {
     public void delete(@PathVariable Long id) {
         courseService.delete(id);
     }
-
 }
