@@ -1,0 +1,163 @@
+CRS API GUIDE
+=============
+
+Ghi chú quan trọng:
+- Toàn bộ request nên gọi qua API Gateway: http://localhost:8080
+- Không gọi trực tiếp vào 8081, 8082, 8083 khi test bằng Postman
+- Login không cần token
+- Các API course/registration cần Authorization: Bearer <token>
+- Nếu muốn tạo/sửa/xóa khóa học thì tài khoản phải có role ADMIN
+
+1) ĐĂNG NHẬP LẤY JWT
+---------------------
+Method: POST
+URL: http://localhost:8080/api/auth/login
+Headers:
+  Content-Type: application/json
+Body (raw JSON):
+{
+  "username": "admin",
+  "password": "admin123"
+}
+
+Lưu ý:
+- username/password phải đúng với dữ liệu đang tồn tại trong auth_db
+- response ví dụ:
+{
+  "token": "eyJhbGciOiJIUzI1NiJ9...",
+  "username": "admin",
+  "role": "ADMIN"
+}
+
+Copy giá trị token ở field "token".
+
+2) DÙNG TOKEN TRONG POSTMAN
+---------------------------
+Sau khi login thành công:
+- Chọn tab Authorization
+- Loại: Bearer Token
+- Giá trị: <token đã copy>
+
+Ví dụ:
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+
+3) DANH SÁCH KHÓA HỌC (PUBLIC)
+------------------------------
+Method: GET
+URL: http://localhost:8080/api/public/courses
+
+Hoặc dùng route mặc định:
+GET http://localhost:8080/api/courses
+
+Trường hợp GET /api/courses có thể public trong project, nhưng route public theo gateway là /api/public/courses.
+
+4) XEM CHI TIẾT MỘT KHÓA HỌC
+----------------------------
+Method: GET
+URL: http://localhost:8080/api/courses/{id}
+Ví dụ:
+GET http://localhost:8080/api/courses/1
+
+5) TẠO KHÓA HỌC (CHỈ ADMIN)
+---------------------------
+Method: POST
+URL: http://localhost:8080/api/courses
+Headers:
+  Content-Type: application/json
+  Authorization: Bearer <token>
+Body:
+{
+  "tenMonHoc": "Java Spring Boot",
+  "soTinChi": 3,
+  "soChoToiDa": 30
+}
+
+Lưu ý:
+- Field "soChoConLai" không cần truyền khi tạo mới
+- Nếu bạn login bằng tài khoản không có role ADMIN, request sẽ bị từ chối
+
+6) SỬA KHÓA HỌC (CHỈ ADMIN)
+---------------------------
+Method: PUT
+URL: http://localhost:8080/api/courses/{id}
+Headers:
+  Content-Type: application/json
+  Authorization: Bearer <token>
+Body:
+{
+  "id": 1,
+  "tenMonHoc": "Java Spring Boot nâng cao",
+  "soTinChi": 4,
+  "soChoToiDa": 35,
+  "soChoConLai": 35
+}
+
+7) XÓA KHÓA HỌC (CHỈ ADMIN)
+---------------------------
+Method: DELETE
+URL: http://localhost:8080/api/courses/{id}
+Headers:
+  Authorization: Bearer <token>
+
+8) ĐĂNG KÝ KHÓA HỌC
+-------------------
+Method: POST
+URL: http://localhost:8080/api/registrations
+Headers:
+  Content-Type: application/json
+  Authorization: Bearer <token>
+Body:
+{
+  "studentId": 1,
+  "courseId": 1
+}
+
+Lưu ý:
+- studentId là id sinh viên
+- courseId là id khóa học cần đăng ký
+- API này yêu cầu user đã login và gửi token hợp lệ
+
+9) HỦY ĐĂNG KÝ KHÓA HỌC
+------------------------
+Method: DELETE
+URL: http://localhost:8080/api/registrations/{id}
+Headers:
+  Authorization: Bearer <token>
+
+Ví dụ:
+DELETE http://localhost:8080/api/registrations/10
+
+10) CÁCH TEST THEO THỨ TỰ
+------------------------
+1. Chạy tất cả service
+2. Đăng nhập ở POST /api/auth/login
+3. Copy token
+4. Gửi bearer token ở các request sau:
+   - POST /api/courses
+   - PUT /api/courses/{id}
+   - DELETE /api/courses/{id}
+   - POST /api/registrations
+   - DELETE /api/registrations/{id}
+5. Dùng GET /api/public/courses để xem khóa học
+
+11) VÍ DỤ POSTMAN CỦA CẢNH BÁO/DEBUG
+------------------------------------
+- Error 401 Unauthorized: thiếu Authorization header hoặc token sai
+- Error 403 Forbidden: token hợp lệ nhưng không đủ quyền (ví dụ account không phải ADMIN khi tạo khóa học)
+- Error 400 Bad Request: JSON sai format hoặc thiếu field bắt buộc
+
+12) GHI NHỚ QUAN TRỌNG
+---------------------
+- Login endpoint: /api/auth/login
+- Course endpoint: /api/courses
+- Public course endpoint: /api/public/courses
+- Registration endpoint: /api/registrations
+- JWT đi qua header Authorization: Bearer <token>
+- Gateway là cổng trung gian duy nhất nên test qua localhost:8080
+
+Kết luận:
+- Đăng nhập -> lấy token
+- Dán token vào Authorization
+- Gọi các API sau bằng Bearer token
+
+Nếu cần, mình có thể tiếp tục viết thêm file "api-example.json" cho Postman collection hoặc chuẩn hóa các mẫu request theo dạng JSON rõ ràng hơn.
