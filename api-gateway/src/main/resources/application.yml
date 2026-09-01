@@ -46,6 +46,13 @@ spring:
               filters:
                 - RewritePath=/api/public/courses, /courses
 
+            - id: auth-service-students-partner
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/public/students
+              filters:
+                - RewritePath=/api/public/students, /auth/public/students
+
           globalcors:
             cors-configurations:
               '[/**]':
@@ -58,6 +65,7 @@ jwt:
 
 partner:
   api-key: crs-partner-key-2026
+  student-api-key: crs-partner-student-key-2026
 
 management:
   endpoints:

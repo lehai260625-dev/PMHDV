@@ -1,40 +1,57 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useCourses } from './api/useCourses';
-import { createCourse, updateCourse, deleteCourse } from
-'./api/courseApi';
+import { createCourse, updateCourse, deleteCourse } from './api/courseApi';
 import SearchBox from './components/SearchBox';
 import CourseList from './components/CourseList';
 import Pagination from './components/Pagination';
 import CourseForm from './components/CourseForm';
 import type { Course, CourseFormValues } from './types/course';
 import type { ApiErrorResponse } from './types/apiError';
+
 function App() {
-const [keyword, setKeyword] = useState('');
-const [page, setPage] = useState(0);
-const [editingCourse, setEditingCourse] = useState<Course |
-null>(null);
-const [submitting, setSubmitting] = useState(false);
-const [formError, setFormError] = useState<string | null>(null);
-const { courses, totalPages, state, errorMessage, refetch } =
-useCourses(keyword, page);
-const handleSearch = (newKeyword: string) => {
-setKeyword(newKeyword);
-setPage(0);
-};
-const extractErrorMessage = (err: unknown): string => {
-if (axios.isAxiosError<ApiErrorResponse>(err)) {
-const data = err.response?.data;
-if (data?.message) return data.message;
-// Truong hop loi validation server tra ve dang { tenMonHoc:"...", soTinChi: "..." }
-if (data) {
-const firstFieldError = Object.values(data).find((v) => typeof
-v === 'string');
-if (firstFieldError) return firstFieldError;
-}
-}
-return 'Da xay ra loi, vui long thu lai.';
-};
+  const [keyword, setKeyword] = useState('');
+  const [page, setPage] = useState(0);
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const { courses, totalPages, state, errorMessage, refetch } = useCourses(keyword, page);
+
+  const handleSearch = (newKeyword: string) => {
+    setKeyword(newKeyword);
+    setPage(0);
+  };
+
+  const extractErrorMessage = (err: unknown): string => {
+    if (axios.isAxiosError<ApiErrorResponse>(err)) {
+      const rawData = err.response?.data as unknown;
+      const rawText = typeof rawData === 'string' ? rawData : '';
+
+      if (rawText.trim().length > 0) {
+        return rawText;
+      }
+
+      if (rawData && typeof rawData === 'object') {
+        const typedData = rawData as Record<string, unknown>;
+        const message = typeof typedData.message === 'string' ? typedData.message : '';
+
+        if (message.trim().length > 0) {
+          return message;
+        }
+
+        const firstFieldError = Object.values(typedData).find(
+          (v): v is string => typeof v === 'string' && v.trim().length > 0
+        );
+
+        if (typeof firstFieldError === 'string' && firstFieldError.trim().length > 0) {
+          return firstFieldError;
+        }
+      }
+    }
+
+    return 'Da xay ra loi, vui long thu lai.';
+  };
 const handleFormSubmit = async (values: CourseFormValues) => {
 setSubmitting(true);
 setFormError(null);

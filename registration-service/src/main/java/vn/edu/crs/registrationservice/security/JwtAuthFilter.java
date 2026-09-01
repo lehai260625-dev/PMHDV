@@ -8,8 +8,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
-import
-        org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -36,18 +35,20 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 SecretKey key =
                         Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
 // Cú pháp mới cho JJWT 0.12.+
+               
                 Claims claims = Jwts.parser()
-                        .verifyWith(key)
-                        .build()
-                        .parseSignedClaims(token)
-                        .getPayload();
+.verifyWith(key)
+.build()
+.parseSignedClaims(token)
+.getPayload();
+String username = claims.getSubject();
+String role = claims.get("role", String.class);
+Long userId = claims.get("userId", Long.class);
+var authToken = new UsernamePasswordAuthenticationToken(
+username, userId, List.of(new SimpleGrantedAuthority("ROLE_" +
 
-                String username = claims.getSubject();
-                String role = claims.get("role", String.class);
-                var authToken = new UsernamePasswordAuthenticationToken(
-                        username, null, List.of(new
-                        SimpleGrantedAuthority("ROLE_" + role))
-                );
+role))
+);
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             } catch (Exception e) {
                 SecurityContextHolder.clearContext();

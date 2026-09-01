@@ -5,7 +5,9 @@ import vn.edu.crs.registrationservice.entity.Registration;
 import vn.edu.crs.registrationservice.repository.RegistrationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.NoSuchElementException;
 @Service
 @RequiredArgsConstructor
@@ -14,6 +16,9 @@ public class RegistrationService {
     private static final String DA_HUY = "DA_HUY";
     private final RegistrationRepository registrationRepository;
     private final CourseClient courseClient;
+    public List<Registration> getMyRegistrations(Long studentId) {
+return registrationRepository.findByStudentId(studentId);
+}
     public Registration register(RegistrationRequestDTO dto) {
         if
         (registrationRepository.existsByStudentIdAndCourseIdAndTrangThai(

@@ -15,10 +15,11 @@ import java.util.List;
 public class AuthHeaderFilter implements GlobalFilter, Ordered {
 
     // Các đường dẫn KHÔNG cần Header Authorization
-    private static final List<String> OPEN_PATHS = List.of(
-            "/api/auth/login",
-            "/api/public/courses"
-    );
+   private static final List<String> OPEN_PATHS = List.of(
+        "/api/auth/login",
+        "/api/public/courses",
+        "/api/public/students"
+);
 
     @Override
     public Mono<Void> filter(

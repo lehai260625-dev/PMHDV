@@ -8,6 +8,8 @@ import vn.edu.crs.authservice.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import vn.edu.crs.authservice.dto.StudentDTO;
+import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -21,9 +23,16 @@ public class AuthService {
         {
             throw new InvalidCredentialsException("Sai username hoac password");
         }
-        String token = jwtUtil.generateToken(user.getUsername(),
-                user.getRole());
-        return new LoginResponseDTO(token, user.getUsername(),
-                user.getRole());
+        String token = jwtUtil.generateToken(user.getId(), user.getUsername(),
+user.getRole());
+return new LoginResponseDTO(user.getId(), token, user.getUsername(),
+user.getRole());
     }
+    public List<StudentDTO> getAllStudents() {
+    return userRepository.findByRole("STUDENT").stream()
+            .map(u -> new StudentDTO(u.getId(), u.getUsername()))
+            .toList();
+}
+
+
 }
