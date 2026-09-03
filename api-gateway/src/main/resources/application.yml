@@ -45,8 +45,14 @@ spring:
                 - Path=/api/public/courses
               filters:
                 - RewritePath=/api/public/courses, /courses
-
-            - id: auth-service-students-partner
+            - id: auth-service-apikeys
+              uri: http://localhost:8081
+              predicates:
+                 - Path=/api/api-keys,/api/api-keys/**
+              filters:
+                 - RewritePath=/api/api-keys/(?<segment>.*), /api-keys/${segment}
+                 - RewritePath=/api/api-keys, /api-keys
+            - id: auth-service-students-disabled
               uri: http://localhost:8081
               predicates:
                 - Path=/api/public/students
@@ -72,3 +78,4 @@ management:
     web:
       exposure:
         include: gateway
+        

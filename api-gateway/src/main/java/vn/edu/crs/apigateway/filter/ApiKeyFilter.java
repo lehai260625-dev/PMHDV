@@ -9,9 +9,14 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import vn.edu.crs.apigateway.cache.ApiKeyValidationCache;
+import vn.edu.crs.apigateway.client.AuthServiceClient;
 
 @Component
 public class ApiKeyFilter implements GlobalFilter, Ordered {
+
+    private static final String PARTNER_PATH = "/api/public/courses";
+    private static final String REQUIRED_SCOPE = "courses:read";
 
     @Value("${partner.api-key}")
     private String coursesApiKey;
@@ -19,27 +24,49 @@ public class ApiKeyFilter implements GlobalFilter, Ordered {
     @Value("${partner.student-api-key}")
     private String studentsApiKey;
 
+    private final AuthServiceClient authServiceClient;
+    private final ApiKeyValidationCache cache;
+
+    public ApiKeyFilter(AuthServiceClient authServiceClient, ApiKeyValidationCache cache) {
+        this.authServiceClient = authServiceClient;
+        this.cache = cache;
+    }
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
 
-        String requiredKey;
-        if (path.startsWith("/api/public/courses")) {
-            requiredKey = coursesApiKey;
-        } else if (path.startsWith("/api/public/students")) {
-            requiredKey = studentsApiKey;
-        } else {
+        if (!path.startsWith(PARTNER_PATH)) {
             return chain.filter(exchange);
         }
 
         String apiKey = request.getHeaders().getFirst("X-API-KEY");
-        if (apiKey == null || !apiKey.equals(requiredKey)) {
+        if (apiKey == null || apiKey.isBlank()) {
             exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
             return exchange.getResponse().setComplete();
         }
 
-        return chain.filter(exchange);
+        if (apiKey.equals(coursesApiKey)) {
+            return chain.filter(exchange);
+        }
+
+        String cacheKey = apiKey + ":" + REQUIRED_SCOPE;
+        Boolean cached = cache.get(cacheKey);
+        if (cached != null) {
+            return cached ? chain.filter(exchange) : reject(exchange);
+        }
+
+        return authServiceClient.isValidForScope(apiKey, REQUIRED_SCOPE)
+                .flatMap(valid -> {
+                    cache.put(cacheKey, valid);
+                    return valid ? chain.filter(exchange) : reject(exchange);
+                });
+    }
+
+    private Mono<Void> reject(ServerWebExchange exchange) {
+        exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+        return exchange.getResponse().setComplete();
     }
 
     @Override

@@ -17,8 +17,7 @@ public class AuthHeaderFilter implements GlobalFilter, Ordered {
     // Các đường dẫn KHÔNG cần Header Authorization
    private static final List<String> OPEN_PATHS = List.of(
         "/api/auth/login",
-        "/api/public/courses",
-        "/api/public/students"
+        "/api/public/courses"
 );
 
     @Override
@@ -28,6 +27,11 @@ public class AuthHeaderFilter implements GlobalFilter, Ordered {
 
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
+
+        if (path.startsWith("/api/public/students")) {
+            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+            return exchange.getResponse().setComplete();
+        }
 
         boolean isOpen = OPEN_PATHS.stream()
                 .anyMatch(path::startsWith);
